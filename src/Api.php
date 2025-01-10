@@ -25,9 +25,49 @@ class Api
 {
     const APP_VERSION = "640";
     const APP_SCHEMA_VERSION = "6.5.2";
+    const MOBILE_OS = "ANDROID";
+    const MOBILE_OS_VERSION = "14";
+    const MOBILE_BRAND = "XIAOMI";
+    const MOBILE_TYPE = "Android for arm64";
+    const CLIENT_ID = "65l2o68kessyp8e";
     const PLATFORM = "YUNMA_APP";
     const USER_AGENT = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.135 Mobile Safari/537.36 ZJYXYwebviewbroswer ZJYXYAndroid tourCustomer/yunmaapp.NET/6.5.2/";
     const ENDPOINT = "https://compus.xiaofubao.com";
+
+    static public function loginByCode($deviceId, $phoneNumber, $verificationCode)
+    {
+        $url = self::ENDPOINT . '/login/doLoginByVerificationCode';
+
+        $param = [
+            'appVersion' => self::APP_VERSION,
+            'appAllVersion' => self::APP_SCHEMA_VERSION,
+            'appPlatform' => self::MOBILE_OS,
+            'brand' => self::MOBILE_BRAND,
+            'clientId' => self::CLIENT_ID,
+            'deviceId' => $deviceId,
+            'platform' => self::PLATFORM,
+            'mobilePhone' => $phoneNumber,
+            'verificationCode' => $verificationCode,
+            'mobileType' => self::MOBILE_TYPE,
+            'osType' => self::MOBILE_OS,
+            'osVersion' => self::MOBILE_OS_VERSION,
+            'invitationCode' => '',
+            'schoolCode' => '',
+            'testAccount' => 1,
+            'token' => ''
+        ];
+
+        $headers = [
+            'user-agent: ' . self::USER_AGENT . $deviceId
+        ];
+
+        $ret = RequestUtil::post($url, $param, $headers, '', true, false);
+        $response = json_decode($ret['response'], true);
+
+        if (!$response['success']) return false;
+
+        return $response['data'];
+    }
 
     static public function getImageCaptcha($deviceId, $securityToken)
     {
