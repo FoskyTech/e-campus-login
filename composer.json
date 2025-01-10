@@ -1,0 +1,25 @@
+{
+    "name": "foskytech/e-campus-login",
+    "description": "易校园模拟登录",
+    "type": "library",
+    "license": "AGPL-3.0",
+    "autoload": {
+        "psr-4": {
+            "FoskyTech\\ECampusLogin\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "FoskyM",
+            "email": "i@fosky.top",
+            "homepage": "https://fosky.top",
+            "role": "Developer"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=7.4.0",
+        "ext-curl": "*",
+        "ext-json": "*"
+    }
+}
