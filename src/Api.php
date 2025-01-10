@@ -19,9 +19,41 @@
 
 namespace FoskyTech\ECampusLogin;
 
+use FoskyTech\ECampusLogin\RequestUtil;
+
 class Api
 {
-    static public function getAppSecurityToken($deviceID, $securityToken)
+    const APP_VERSION = "640";
+    const PLATFORM = "YUNMA_APP";
+    const USER_AGENT = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.135 Mobile Safari/537.36 ZJYXYwebviewbroswer ZJYXYAndroid tourCustomer/yunmaapp.NET/6.5.2/";
+    const ENDPOINT = "https://compus.xiaofubao.com";
+
+    static public function getSecurityToken($deviceId, $sceneCode = 'app_user_login')
+    {
+        $url = self::ENDPOINT . '/common/security/token';
+        $param = [
+            'appVersion' => self::APP_VERSION,
+            'deviceId' => $deviceId,
+            'platform' => self::PLATFORM,
+            'sceneCode' => $sceneCode,
+            'schoolCode' => '',
+            'testAccount' => 1,
+            'token' => ''
+        ];
+        $headers = [
+            'user-agent: ' . self::USER_AGENT . $deviceId
+        ];
+
+        $ret = RequestUtil::post($url, $param, $headers, '', true, false);
+        $response = $ret['response'];
+
+        $data = json_decode($response, true);
+        if (!$data['success']) return false;
+
+        return $data['data']['securityToken'];
+    }
+
+    static public function getAppSecurityToken($deviceId, $securityToken)
     {
         if (strlen($securityToken) != 56) {
             return ['', 'Invalid security token length'];
@@ -47,7 +79,7 @@ class Api
         $microseconds = floor(($timestampNano % 1e9) / 1e2);
         $ts = sprintf("%.0f.%.0f", $seconds, $microseconds);
 
-        $data = $deviceID . "|YUNMA_APP|" . $t . "|" . $ts . "|APP_ALL_VERSION";
+        $data = $deviceId . "|" . self::PLATFORM . "|" . $t . "|" . $ts . "|APP_ALL_VERSION";
 
         $md5Hash1 = strtoupper(md5($data));
         $md5Hash2 = strtoupper(md5($md5Hash1));
