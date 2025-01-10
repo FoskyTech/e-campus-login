@@ -24,9 +24,79 @@ use FoskyTech\ECampusLogin\RequestUtil;
 class Api
 {
     const APP_VERSION = "640";
+    const APP_SCHEMA_VERSION = "6.5.2";
     const PLATFORM = "YUNMA_APP";
     const USER_AGENT = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.135 Mobile Safari/537.36 ZJYXYwebviewbroswer ZJYXYAndroid tourCustomer/yunmaapp.NET/6.5.2/";
     const ENDPOINT = "https://compus.xiaofubao.com";
+
+    static public function getImageCaptcha($deviceId, $securityToken)
+    {
+        $url = self::ENDPOINT . '/common/security/imageCaptcha';
+        if (is_array($securityToken)) {
+            $securityToken = $securityToken['securityToken'];
+        }
+
+        $param = [
+            'appVersion' => self::APP_VERSION,
+            'deviceId' => $deviceId,
+            'platform' => self::PLATFORM,
+            'securityToken' => $securityToken,
+            'schoolCode' => '',
+            'testAccount' => 1,
+            'token' => ''
+        ];
+
+        $headers = [
+            'user-agent: ' . self::USER_AGENT . $deviceId
+        ];
+
+        $ret = RequestUtil::post($url, $param, $headers, '', true, false);
+        $response = json_decode($ret['response'], true);
+
+        if (!$response['success']) return false;
+
+        $base64 = str_replace('data:image/jpeg;base64,', '', $response['data']);
+        return base64_decode($base64);
+    }
+
+    static public function sendLoginCode($deviceId, $securityToken, $phoneNumber, $sendCount = 0, $imageCaptchaVal = '', $appSecurityToken = '')
+    {
+        $url = self::ENDPOINT . '/compus/user/sendLoginVerificationCode';
+        if (is_array($securityToken)) {
+            $securityToken = $securityToken['securityToken'];
+        }
+        if (!$appSecurityToken) {
+            $appSecurityToken = self::getAppSecurityToken($deviceId, $securityToken)[0];
+        }
+        $param = [
+            'appVersion' => self::APP_VERSION,
+            'deviceId' => $deviceId,
+            'platform' => self::PLATFORM,
+            'securityToken' => $securityToken,
+            'appSecurityToken' => $appSecurityToken,
+            'mobilePhone' => $phoneNumber,
+            'sendCount' => $sendCount,
+            'schoolCode' => '',
+            'testAccount' => 1,
+            'token' => ''
+        ];
+        if ($imageCaptchaVal != '') {
+            $param['imageCaptchaValue'] = $imageCaptchaVal;
+        }
+        ksort($param);
+        $headers = [
+            'user-agent: ' . self::USER_AGENT . $deviceId,
+            'content-type: application/json; charset=UTF-8'
+        ];
+
+        $ret = RequestUtil::post($url, $param, $headers, '', true, true);
+        $response = $ret['response'];
+
+        $data = json_decode($response, true);
+        if (!$data['success']) return false;
+
+        return $data['data']['userExists'];
+    }
 
     static public function getSecurityToken($deviceId, $sceneCode = 'app_user_login')
     {
@@ -50,11 +120,14 @@ class Api
         $data = json_decode($response, true);
         if (!$data['success']) return false;
 
-        return $data['data']['securityToken'];
+        return $data['data'];
     }
 
     static public function getAppSecurityToken($deviceId, $securityToken)
     {
+        if (is_array($securityToken)) {
+            $securityToken = $securityToken['securityToken'];
+        }
         if (strlen($securityToken) != 56) {
             return ['', 'Invalid security token length'];
         }
@@ -67,26 +140,20 @@ class Api
             return ['', 'Invalid token encoding'];
         }
 
-        $plainText = openssl_decrypt($cipherText, 'AES-128-ECB', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
+        $plainText = openssl_decrypt($cipherText, 'AES-128-ECB', $key, OPENSSL_RAW_DATA);
         if ($plainText === false) {
             return ['', 'Decryption failed'];
         }
 
         $t = $plainText;
+        $ts = floor(microtime(true) * 1e3 - 300);
 
-        $timestampNano = microtime(true) * 1000000000;
-        $seconds = floor($timestampNano / 1e9);
-        $microseconds = floor(($timestampNano % 1e9) / 1e2);
-        $ts = sprintf("%.0f.%.0f", $seconds, $microseconds);
-
-        $data = $deviceId . "|" . self::PLATFORM . "|" . $t . "|" . $ts . "|APP_ALL_VERSION";
+        $data = $deviceId . "|" . self::PLATFORM . "|" . $t . "|" . $ts . "|" . self::APP_SCHEMA_VERSION;
 
         $md5Hash1 = strtoupper(md5($data));
         $md5Hash2 = strtoupper(md5($md5Hash1));
 
-        $s = $md5Hash2;
-
-        $data = $data . "|" . $s;
+        $data = $data . "|" . $md5Hash2;
         $encrypted = openssl_encrypt($data, 'AES-128-ECB', $key, OPENSSL_RAW_DATA);
         if ($encrypted === false) {
             return ['', 'Encryption failed: ' . openssl_error_string()];
@@ -96,5 +163,4 @@ class Api
 
         return [$appSecurityToken, null];
     }
-
 }

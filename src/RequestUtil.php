@@ -39,7 +39,7 @@ class RequestUtil
 
         $opt = [
             CURLOPT_URL => $url,
-            CURLOPT_POSTFIELDS => $json ? json_encode($param) : http_build_query($param),
+            CURLOPT_POSTFIELDS => $json ? json_encode($param, JSON_UNESCAPED_SLASHES) : http_build_query($param),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => true,
             CURLOPT_ENCODING => '',
