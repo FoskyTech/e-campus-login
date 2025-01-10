@@ -34,6 +34,40 @@ class Api
     const USER_AGENT = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.135 Mobile Safari/537.36 ZJYXYwebviewbroswer ZJYXYAndroid tourCustomer/yunmaapp.NET/6.5.2/";
     const ENDPOINT = "https://compus.xiaofubao.com";
 
+    static public function loginBySilent($deviceId, $phoneNumber, $userId, $token)
+    {
+        $url = self::ENDPOINT . '/login/doLoginBySilent';
+
+        $param = [
+            'appVersion' => self::APP_VERSION,
+            'appAllVersion' => self::APP_SCHEMA_VERSION,
+            'appPlatform' => self::MOBILE_OS,
+            'brand' => self::MOBILE_BRAND,
+            'clientId' => self::CLIENT_ID,
+            'deviceId' => $deviceId,
+            'platform' => self::PLATFORM,
+            'mobilePhone' => $phoneNumber,
+            'ymId' => $userId,
+            'mobileType' => self::MOBILE_TYPE,
+            'osType' => self::MOBILE_OS,
+            'osVersion' => self::MOBILE_OS_VERSION,
+            'invitationCode' => '',
+            'schoolCode' => '',
+            'testAccount' => 1,
+            'token' => $token
+        ];
+        $headers = [
+            'user-agent: ' . self::USER_AGENT . $deviceId
+        ];
+
+        $ret = RequestUtil::post($url, $param, $headers, '', true, false);
+        $response = json_decode($ret['response'], true);
+
+        if (!$response['success']) return false;
+
+        return $response['data'];
+    }
+
     static public function loginByCode($deviceId, $phoneNumber, $verificationCode)
     {
         $url = self::ENDPOINT . '/login/doLoginByVerificationCode';
