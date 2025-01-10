@@ -30,6 +30,10 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
 
+## 描述
+登录后得到 `ymId`(传参时用此名，接口返回字段为 `id`) 和 `token`，即可访问易校园的其它接口。
+这里因为精力有限只做了登录部分，就当是抛砖引玉一下。
+
 ## 安装
 
 ```shell
